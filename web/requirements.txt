@@ -1,0 +1,4 @@
+pyshorteners
+elasticsearch==7.0.4
+elasticsearch-dsl==5.2.0
+Flask==1.1.1
