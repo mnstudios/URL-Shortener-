@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  elasticsearch:
+      build: ./elasticsearch
+      ports:
+        - "9200:9200"
+        - "9300:9300"
+      environment:
+        - "discovery.zen.minimum_master_nodes=1"
+        - "discovery.type=single-node"
+        - "cluster.name=elasticsearch"
+        - "network.host=0.0.0.0"  
+        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+        - "XPACK_SECURITY_ENABLED=false"
+      networks:
+        - elk
+  web:
+    build: ./web
+    restart: always
+    ports:
+      - "4001:4001"
+    environment:
+      - "DOCKER_MACHINE_IP=${DOCKER_MACHINE_IP}"
+    depends_on:
+      - elasticsearch
+networks:
+  elk:
+    driver: bridge
