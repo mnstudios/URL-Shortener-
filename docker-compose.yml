@@ -6,6 +6,8 @@ services:
       ports:
         - "9200:9200"
         - "9300:9300"
+      volumes:
+        - es-data01:/usr/share/elasticsearch/data
       environment:
         - "discovery.zen.minimum_master_nodes=1"
         - "discovery.type=single-node"
@@ -15,15 +17,30 @@ services:
         - "XPACK_SECURITY_ENABLED=false"
       networks:
         - elk
+      healthcheck:
+        test: "curl http://elasticsearch:9200"
+        interval: "1s"
+        timeout: "3s"
+        retries: 60
   web:
     build: ./web
     restart: always
     ports:
       - "4001:4001"
     environment:
-      - "DOCKER_MACHINE_IP=${DOCKER_MACHINE_IP}"
+      - "ELASTIC_URL=http://elasticsearch:9200"
+    links:
+        - elasticsearch
     depends_on:
       - elasticsearch
+    networks:
+        - elk    
 networks:
   elk:
     driver: bridge
+
+volumes:
+  es-data01:
+    driver: local
+    #external: true
+
