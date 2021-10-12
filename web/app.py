@@ -63,19 +63,15 @@ def edit():
       }
 
     res = es.search(index=index_name, body=search_param)
-    nb=res['hits']['total']['value']
-    logger.info(nb)
-    for i in range(nb-1):
-      logger.info(i)  
-      idd=res['hits']['hits'][i]['_id']
-      logger.info(idd)
-      doc = {
+    idd=res['hits']['hits'][0]['_id']
+    logger.info(idd)
+    doc = {
         'doc': {
         'url': url ,
         'tiny': tiny_new
         }
       }
-      res = es.update(index=index_name, id=idd, body=doc)
+    res = es.update(index=index_name, id=idd, body=doc)
     return "Request Processed.\n"
 
 @app.route('/<string:id>', methods=['get'])

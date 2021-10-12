@@ -18,7 +18,7 @@
 - To get an entry
    curl localhost:4001/<your _id>
 
-- To update an entry 
+- To update an entry  (replace your tiny url)
  curl localhost:4001/edit -d '{"tiny":"https://tinyurl.com/y533jl6f","url": "https://www.youtube.com/ayushirawat"}'  -H 'Content-Type: application/json'
 
 
