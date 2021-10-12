@@ -1,4 +1,3 @@
-
 import pyshorteners as sh
 import json
 import os
@@ -47,21 +46,23 @@ def create():
 @app.route('/edit', methods=['post'])
 def edit():
     data = request.get_json()
-    tiny=data["tiny"]
+    short=data["short"]
     url=data["url"]
     s = sh.Shortener()
-    logger.info(url)
-    logger.info(tiny)
-    tiny_new = s.tinyurl.short(url)
+    logger.info('Data Received: "{data}"'.format(data=url))
+    tiny = s.tinyurl.short(url)
     q = {
-     "script": "ctx._source.url=www.google.com",
+     "script": {
+     "inline": "ctx._source.url="+url,
+     "lang": "painless"
+    },
      "query": {
      "match": {
         "tiny": tiny
      }
     }
     }
-    logger.info(tiny_new)
+
     es.update_by_query(body=q, index=index_name)
     return "Request Processed.\n"
 
