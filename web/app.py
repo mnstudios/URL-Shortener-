@@ -53,16 +53,29 @@ def edit():
     logger.info(url)
     logger.info(tiny)
     tiny_new = s.tinyurl.short(url)
-    q = {
-     "script": "ctx._source.url=www.google.com",
-     "query": {
-     "match": {
-        "tiny": tiny
-     }
-    }
-    }
     logger.info(tiny_new)
-    es.update_by_query(body=q, index=index_name)
+    search_param = {
+      'query': {
+          'match': {
+              'tiny': tiny
+          }
+        }
+      }
+
+    res = es.search(index=index_name, body=search_param)
+    nb=res['hits']['total']['value']
+    logger.info(nb)
+    for i in range(nb-1):
+      logger.info(i)  
+      idd=res['hits']['hits'][i]['_id']
+      logger.info(idd)
+      doc = {
+        'doc': {
+        'url': url ,
+        'tiny': tiny_new
+        }
+      }
+      res = es.update(index=index_name, id=idd, body=doc)
     return "Request Processed.\n"
 
 @app.route('/<string:id>', methods=['get'])
@@ -76,8 +89,8 @@ def get(id):
       }
     }
 
-    response = es.search(index=index_name, body=search_param)
-    data=response['hits']['hits'][0]['_source']['url']
+    res = es.search(index=index_name, body=search_param)
+    data=res['hits']['hits'][0]['_source']['url']
     logger.info(data)
     return "url: "+ data
 
