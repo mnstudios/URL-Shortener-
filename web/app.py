@@ -1,6 +1,24 @@
 import pyshorteners as sh
 import json
+import os
 from flask import Flask,request, jsonify
+from elasticsearch import Elasticsearch
+
+import logging
+from sys import stdout
+
+# Define logger
+logger = logging.getLogger('mylogger')
+
+logger.setLevel(logging.DEBUG) # set logger level
+logFormatter = logging.Formatter\
+("%(name)-12s %(asctime)s %(levelname)-8s %(filename)s:%(funcName)s %(message)s")
+consoleHandler = logging.StreamHandler(stdout) #set streamhandler to stdout
+consoleHandler.setFormatter(logFormatter)
+logger.addHandler(consoleHandler)
+
+es = Elasticsearch(['elasticsearch:9200'])
+index_name="url-index"
 
 
 
@@ -13,8 +31,15 @@ def create():
     data = request.get_json()
     url=data["url"]
     s = sh.Shortener()
-    print('Data Received: "{data}"'.format(data=url))
+    logger.info('Data Received: "{data}"'.format(data=url))
     tiny = s.tinyurl.short(url)
+    doc = {
+        'url': url ,
+        'tiny': tiny
+    }
+    res = es.index(index=index_name,body=doc)
+    logger.info(res)
+    es.indices.refresh(index=index_name)
     return "Request Processed.\n"
 
 
@@ -25,15 +50,38 @@ def edit():
     url=data["url"]
     s = sh.Shortener()
     s = sh.Shortener()
-    print('Data Received: "{data}"'.format(data=url))
+    logger.info('Data Received: "{data}"'.format(data=url))
     tiny = s.tinyurl.short(url)
+    q = {
+     "script": {
+     "inline": "ctx._source.url="+url,
+     "lang": "painless"
+    },
+     "query": {
+     "match": {
+        "tiny": tiny
+     }
+    }
+    }
 
+    es.update_by_query(body=q, index=index_name)
     return "Request Processed.\n"
 
-@app.route('/<int:id>', methods=['get'])
+@app.route('/<string:id>', methods=['get'])
 def get(id):
-    print(id)
-    return "Request Processed.\n"
+    logger.info(id)
+    search_param = {
+    'query': {
+        'match': {
+            '_id': id
+        }
+      }
+    }
+
+    response = es.search(index=index_name, body=search_param)
+    data=response['hits']['hits'][0]['_source']['url']
+    logger.info(data)
+    return "url: "+ data
 
 
 if __name__ == '__main__':
